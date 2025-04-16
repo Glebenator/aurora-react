@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora Forecast</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Aurora Forecast</h1>
+            <p>Check the current aurora activity at your location</p>
+        </header>
+        
+        <main>
+            <div class="location-container">
+                <div id="location-status">
+                    <p>Click below to get your location or manually enter coordinates</p>
+                </div>
+                <button id="get-location">Get My Location</button>
+                <div class="manual-coordinates">
+                    <input type="number" id="latitude" placeholder="Latitude" step="0.0001" min="-90" max="90">
+                    <input type="number" id="longitude" placeholder="Longitude" step="0.0001" min="-180" max="180">
+                    <button id="submit-coordinates">Submit</button>
+                </div>
+            </div>
+            
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <p>Fetching aurora data...</p>
+            </div>
+            
+            <div id="aurora-data" class="hidden">
+                <div class="current-location">
+                    <h2>Current Location</h2>
+                    <p id="coordinates">Latitude: <span id="lat-display"></span> | Longitude: <span id="lng-display"></span></p>
+                </div>
+                
+                <div class="kp-index-container">
+                    <h2>Current Kp-Index</h2>
+                    <div class="kp-meter">
+                        <div id="kp-value" class="kp-value">-</div>
+                    </div>
+                    <div class="kp-scale">
+                        <span>0</span>
+                        <span>1</span>
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                        <span>6</span>
+                        <span>7</span>
+                        <span>8</span>
+                        <span>9</span>
+                    </div>
+                </div>
+                
+                <div class="visibility-container">
+                    <h2>Visibility Chance</h2>
+                    <div class="visibility-score" id="visibility-score">-</div>
+                    <p id="visibility-message"></p>
+                </div>
+                
+                <div class="forecast-container">
+                    <h2>24-Hour Forecast</h2>
+                    <div id="forecast-chart" class="forecast-chart"></div>
+                </div>
+            </div>
+            
+            <div id="error-message" class="hidden">
+                <p>Unable to fetch aurora data. Please try again later.</p>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Data provided by <a href="https://www.spaceweatherlive.com" target="_blank">SpaceWeatherLive</a> and <a href="https://www.swpc.noaa.gov" target="_blank">NOAA SWPC</a></p>
+            <p>This is a demo project and not meant for scientific or navigation purposes.</p>
+        </footer>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
