@@ -11,6 +11,13 @@ const AuroraMap = ({ coordinates, kpIndex }) => {
   const [dragging, setDragging] = useState(false);
   const [worldData, setWorldData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const dragStartPos = useRef(null);
+  
+  // Constants for zooming
+  const MIN_ZOOM = 0.7;
+  const MAX_ZOOM = 3;
+  const ZOOM_STEP = 0.1;
   
   // Fetch world data when component mounts
   useEffect(() => {
@@ -61,44 +68,63 @@ const AuroraMap = ({ coordinates, kpIndex }) => {
     if (!svgRef.current || dimensions.width === 0 || kpIndex === null || !worldData) return;
     
     drawMap();
-  }, [dimensions, kpIndex, coordinates, rotation, worldData]);
+  }, [dimensions, kpIndex, coordinates, rotation, worldData, zoomLevel]);
   
-  // Setup mouse interactions for rotating the globe
-  useEffect(() => {
+  // Handle mouse events for globe rotation
+  const handleMouseDown = (event) => {
     if (!svgRef.current) return;
     
-    const svg = d3.select(svgRef.current);
-    
-    const handleMouseDown = () => {
-      setDragging(true);
+    // Save the starting position for the drag
+    dragStartPos.current = {
+      x: event.clientX,
+      y: event.clientY,
+      rotation: { ...rotation }
     };
     
-    const handleMouseMove = (event) => {
-      if (dragging) {
-        const { movementX, movementY } = event;
-        setRotation(prev => ({
-          x: (prev.x + movementX / 4) % 360,
-          y: Math.max(-90, Math.min(90, prev.y - movementY / 4))
-        }));
-      }
-    };
+    setDragging(true);
     
-    const handleMouseUp = () => {
-      setDragging(false);
-    };
+    // Prevent default browser behavior
+    event.preventDefault();
+  };
+  
+  const handleMouseMove = (event) => {
+    if (!dragging || !dragStartPos.current) return;
     
-    svg.on('mousedown', handleMouseDown);
-    svg.on('mousemove', handleMouseMove);
-    svg.on('mouseup', handleMouseUp);
-    svg.on('mouseleave', handleMouseUp);
+    // Calculate the movement distance
+    const dx = event.clientX - dragStartPos.current.x;
+    const dy = event.clientY - dragStartPos.current.y;
     
-    return () => {
-      svg.on('mousedown', null);
-      svg.on('mousemove', null);
-      svg.on('mouseup', null);
-      svg.on('mouseleave', null);
-    };
-  }, [dragging]);
+    // Update rotation (dx moves the longitude, dy moves the latitude)
+    // Fix left/right swap by changing the sign of dx calculation
+    setRotation({
+      x: (dragStartPos.current.rotation.x + dx / 3) % 360, // Note the + sign here for correct direction
+      y: Math.max(-90, Math.min(90, dragStartPos.current.rotation.y + dy / 3))
+    });
+    
+    // Prevent default browser behavior
+    event.preventDefault();
+  };
+  
+  const handleMouseUp = () => {
+    setDragging(false);
+    dragStartPos.current = null;
+  };
+  
+  // Handle mouse wheel for zooming
+  const handleWheel = (event) => {
+    event.preventDefault();
+    
+    // Determine zoom direction (up or down)
+    const zoomDirection = event.deltaY < 0 ? 1 : -1;
+    
+    // Calculate new zoom level
+    const newZoomLevel = Math.max(
+      MIN_ZOOM, 
+      Math.min(MAX_ZOOM, zoomLevel + (zoomDirection * ZOOM_STEP))
+    );
+    
+    setZoomLevel(newZoomLevel);
+  };
   
   // Center the globe on user coordinates when they change
   useEffect(() => {
@@ -114,13 +140,19 @@ const AuroraMap = ({ coordinates, kpIndex }) => {
   const drawMap = () => {
     const { width, height } = dimensions;
     
+    // Calculate base scale based on container size
+    const baseScale = Math.min(width, height) * 0.4;
+    
+    // Apply zoom level to the scale
+    const scaledSize = baseScale * zoomLevel;
+    
     // Clear previous SVG content
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
     
     // Map projection
     const projection = geoOrthographic()
-      .scale(Math.min(width, height) * 0.4)
+      .scale(scaledSize)
       .translate([width / 2, height / 2])
       .rotate([rotation.x, -rotation.y])
       .clipAngle(90);
@@ -325,16 +357,38 @@ const AuroraMap = ({ coordinates, kpIndex }) => {
             width={dimensions.width}
             height={dimensions.height}
             style={{ borderRadius: '8px', cursor: dragging ? 'grabbing' : 'grab' }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onWheel={handleWheel}
           />
         )}
       </div>
       <div className="map-controls">
-        <span className="drag-hint">Click and drag to rotate the globe</span>
+        <span className="drag-hint">Click and drag to rotate the globe • Use mouse wheel to zoom</span>
         {coordinates && (
           <div className="coordinates-display">
             Your Location: {coordinates.latitude.toFixed(2)}° {coordinates.latitude >= 0 ? 'N' : 'S'}, {coordinates.longitude.toFixed(2)}° {coordinates.longitude >= 0 ? 'E' : 'W'}
           </div>
         )}
+        <div className="zoom-controls">
+          <button 
+            className="zoom-button" 
+            onClick={() => setZoomLevel(Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP))}
+            disabled={zoomLevel <= MIN_ZOOM}
+          >
+            −
+          </button>
+          <span className="zoom-level">{Math.round(zoomLevel * 100)}%</span>
+          <button 
+            className="zoom-button" 
+            onClick={() => setZoomLevel(Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP))}
+            disabled={zoomLevel >= MAX_ZOOM}
+          >
+            +
+          </button>
+        </div>
       </div>
       <p className="map-disclaimer">
         This 3D globe shows the approximate oval where aurora may be visible based on the current Kp-index.

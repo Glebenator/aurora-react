@@ -232,6 +232,46 @@ h2 {
 .coordinates-display {
   font-weight: bold;
   color: var(--text-color);
+  margin-bottom: 0.5rem;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.zoom-button {
+  background-color: var(--surface-color);
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+}
+
+.zoom-button:hover:not(:disabled) {
+  background-color: rgba(79, 195, 247, 0.2);
+}
+
+.zoom-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoom-level {
+  color: var(--text-color);
+  min-width: 45px;
+  text-align: center;
 }
 
 .map-disclaimer {
