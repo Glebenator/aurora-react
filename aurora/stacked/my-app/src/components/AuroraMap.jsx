@@ -69,6 +69,15 @@ const AuroraMap = ({ coordinates, kpIndex }) => {
     
     drawMap();
   }, [dimensions, kpIndex, coordinates, rotation, worldData, zoomLevel]);
+
+  // Prevent page scroll when mouse is over the SVG (globe)
+  useEffect(() => {
+    const svgElem = svgRef.current;
+    if (!svgElem) return;
+    const preventScroll = (e) => e.preventDefault();
+    svgElem.addEventListener('wheel', preventScroll, { passive: false });
+    return () => svgElem.removeEventListener('wheel', preventScroll);
+  }, [svgRef, isLoading]);
   
   // Handle mouse events for globe rotation
   const handleMouseDown = (event) => {
@@ -180,8 +189,8 @@ const AuroraMap = ({ coordinates, kpIndex }) => {
       .attr('class', 'country')
       .attr('d', pathGenerator)
       .attr('fill', '#183B69')
-      .attr('stroke', '#444')
-      .attr('stroke-width', 0.3);
+      .attr('stroke', '#fff') // Changed to white for better contrast
+      .attr('stroke-width', 0.3); // Increased stroke width
     
     // Draw graticules (latitude/longitude grid)
     const graticule = d3.geoGraticule();
